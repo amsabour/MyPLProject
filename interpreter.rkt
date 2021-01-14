@@ -2,123 +2,136 @@
 
 (require parser-tools/lex
          (prefix-in : parser-tools/lex-sre)
-         parser-tools/yacc)
+         parser-tools/yacc
+         "parser.rkt"
+         "lexer.rkt")
 
-
-(require "utils.rkt")
-
-
-
-(define-tokens my-tokens (VARIABLE NUMBER BOOLEAN STRING))
-(define-empty-tokens my-empty-tokens (EOF
-                                      NULL
-                                      WHILE DO IF THEN ELSE END RETURN
-                                      SEMICOLON COMMA
-                                      ASSIGN
-                                      LESS GREATER EQUAL NOT-EQUAL
-                                      PLUS MINUS MULT DIV
-                                      PARAN-OPEN PARAN-CLOSE
-                                      BRACKET-OPEN BRACKET-CLOSE))
-
-(define project-lexer
-  (lexer
-   [(eof) (token-EOF)]
-   [whitespace (project-lexer input-port)]
-   
-   ["null"   (token-NULL)]
-   
-   ["while"  (token-WHILE)]
-   ["do"     (token-DO)]
-   ["if"     (token-IF)]
-   ["then"   (token-THEN)]
-   ["else"   (token-ELSE)]
-   ["end"    (token-END)]
-   ["return" (token-RETURN)]
-
-   [";" (token-SEMICOLON)]
-   ["," (token-COMMA)]
-   
-   ["=" (token-ASSIGN)]
-   
-   ["<" (token-LESS)]
-   [">" (token-GREATER)]
-   ["==" (token-EQUAL)]
-   ["!=" (token-NOT-EQUAL)]
-   
-   ["+" (token-PLUS)]
-   ["-" (token-MINUS)]
-   ["*" (token-MULT)]
-   ["/" (token-DIV)]
-
-   ["(" (token-PARAN-OPEN)]
-   [")" (token-PARAN-CLOSE)]
-   ["[" (token-BRACKET-OPEN)]
-   ["]" (token-BRACKET-CLOSE)]
-
-   ["true"  (token-BOOLEAN #t)]
-   ["false" (token-BOOLEAN #f)]
-   [(:or (:+ (char-range #\0 #\9)) (:: (:+ (char-range #\0 #\9)) #\. (:+ (char-range #\0 #\9)))) (token-NUMBER (string->number lexeme))]
-   [(:: #\" any-string #\") (token-STRING lexeme)]
-   [(:+ alphabetic) (token-VARIABLE (string->symbol lexeme))]
-   )
+(define (get-var var-name vars)
+  (cond
+    [(null? vars) 'VAR-DOESNT-EXIST]
+    [(eq? var-name (caar vars)) (cadar vars)]
+    [else (get-var var-name (cdr vars))])
   )
 
+; return vars with updated value for var-name
+(define (update-var var-name new-val vars)
+  (cond
+    [(null? vars) (list (list var-name new-val))]
+    [(eq? var-name (caar vars)) (cons (list (list var-name new-val)) (cdr vars))]
+    [else (cons (car vars) (update-var var-name new-val (cdr vars)))])
+  )
 
-(define project-parser
-  (parser
-   (start command)
-   (end EOF)
-   (error void)
-   (tokens my-tokens my-empty-tokens)
-   (grammar
-    (command ((command SEMICOLON keyword) (append-last $1 $3))
-             ((keyword) (list $1)))
+(define (run-if-cmd expr then-pt else-pt vars)
+  (let ((expr-val (evaluate-expr expr vars)))
+    (if expr-val (interpret then-pt vars) (interpret else-pt vars))
+    )
+  )
+
+(define (run-while-cmd expr pt vars)
+  (do ((expr-val (evaluate-expr expr vars) (evaluate-expr expr vars)))
+    ((or (and (not (null? vars)) (eq? 'PROGRAM-RETURNED (car vars))) (not expr-val)) vars)
+    (set! vars (interpret pt vars))
+    )
+  )
+
+(define (run-assign-cmd var-name expr vars)
+  (let ((expr-val (evaluate-expr expr vars)))
+    (update-var var-name expr-val vars)
+    )
+  )
+
+(define (run-return-cmd expr vars)
+  (let ((expr-val (evaluate-expr expr vars))) (list 'PROGRAM-RETURNED expr-val))
+  )
+
+; returns new vars or ('PROGRAM-RETURNED return-value)
+(define (run-command cmd vars)
+  (cond
+    [(eq? (car cmd) 'IF) (run-if-cmd (cadr cmd) (caddr cmd) (cadddr cmd) vars)]
+    [(eq? (car cmd) 'ASSIGN) (run-assign-cmd (cadr cmd) (caddr cmd) vars)]
+    [(eq? (car cmd) 'WHILE) (run-while-cmd (cadr cmd) (caddr cmd) vars)]
+    [(eq? (car cmd) 'RETURN) (run-return-cmd (cadr cmd) vars)]
     
-    (keyword ((if_statement)     $1)
-             ((assign_statement) $1)
-             ((while_statement)  $1)
-             ((return_statement) $1))
+    [else (display "SOMETHING IS WRONG") '(PROGRAM-RETURNED -9999999)]
+    )
+  )
+
+; returns value
+(define (evaluate-expr expr vars)
+  (let ((a
+  (cond
+    [(eq? (car expr) 'DATA-NUMBER) (cadr expr)]
+    [(eq? (car expr) 'DATA-NULL) (cadr expr)]
+    [(eq? (car expr) 'DATA-BOOL) (cadr expr)]
+    [(eq? (car expr) 'DATA-STRING) (cadr expr)]
+    [(eq? (car expr) 'DATA-LIST) (map (lambda (l) (evaluate-expr l vars)) (cadr expr))]
     
-    (if_statement ((IF exp THEN command ELSE command END) (list 'IF $2 $4 $6)))
-    (assign_statement ((VARIABLE ASSIGN exp) (list 'ASSIGN $1 $3)))
-    (while_statement ((WHILE exp DO command END) (list 'WHILE $2 $4)))
-    (return_statement ((RETURN exp) (list 'RETURN $2)))
+    [(eq? (car expr) 'EVAL-VAR) (get-var (cadr expr) vars)]   ; Implement error handling if var doesn't exist
 
-    (exp ((aexp) $1)
-         ((aexp GREATER aexp) (list 'GREATER $1 $3))
-         ((aexp LESS aexp) (list 'LESS $1 $3))
-         ((aexp EQUAL aexp) (list 'EQUAL $1 $3))
-         ((aexp NOT-EQUAL aexp) (list 'NOT-EQUAL $1 $3)))
+    [(eq? (car expr) 'LESS)      (evaluate-less-than (evaluate-expr (cadr expr) vars) (evaluate-expr (caddr expr) vars))] ; Implement error handling
+    [(eq? (car expr) 'GREATER)   (evaluate-greater-than (evaluate-expr (cadr expr) vars) (evaluate-expr (caddr expr) vars))] ; Implement error handling
+    [(eq? (car expr) 'EQUAL)     (evaluate-equal (evaluate-expr (cadr expr) vars) (evaluate-expr (caddr expr) vars))] ; Implement error handling
+    [(eq? (car expr) 'NOT-EQUAL) (evaluate-not-equal (evaluate-expr (cadr expr) vars) (evaluate-expr (caddr expr) vars))] ; Implement error handling
 
-    (aexp ((bexp) $1)
-          ((bexp MINUS aexp) (list 'SUB $1 $3))
-          ((bexp PLUS aexp) (list 'ADD $1 $3)))
+    [(eq? (car expr) 'ADD)   (evaluate-add (evaluate-expr (cadr expr) vars) (evaluate-expr (caddr expr) vars))] ; Implement error handling
+    [(eq? (car expr) 'SUB)   (evaluate-sub (evaluate-expr (cadr expr) vars) (evaluate-expr (caddr expr) vars))] ; Implement error handling
+    [(eq? (car expr) 'MULT)  (evaluate-mult (evaluate-expr (cadr expr) vars) (evaluate-expr (caddr expr) vars))] ; Implement error handling
+    [(eq? (car expr) 'DIV)   (evaluate-div (evaluate-expr (cadr expr) vars) (evaluate-expr (caddr expr) vars))] ; Implement error handling
 
-    (bexp ((cexp) $1)
-          ((cexp MULT bexp) (list 'MULT $1 $3))
-          ((cexp DIV bexp) (list 'DIV $1 $3)))
+    [(eq? (car expr) 'NEGATIVE)   (evaluate-negative (evaluate-expr (cadr expr) vars))] ; Implement error handling
 
-    (cexp ((MINUS cexp) (list 'NEGATIVE $2))
-          ((PARAN-OPEN exp PARAN-CLOSE) ($2))
-          ((NUMBER) (list 'DATA-NUMBER $1))
-          ((NULL) (list 'DATA-NULL 'NULL))
-          ((VARIABLE) (list 'EVAL-VAR $1))
-          ((BOOLEAN) (list 'DATA-BOOL $1))
-          ((STRING) (list 'DATA-STRING $1))
-          ((VARIABLE listMember) (list 'LIST-SELECT $1 $2))
-          ((list) $1))
-
-    (list ((BRACKET-OPEN listValues BRACKET-CLOSE) (list 'DATA-LIST $2))
-          ((BRACKET-OPEN BRACKET-CLOSE) (list 'DATA-list '())))
-
-    (listValues ((exp) (list $1))
-                ((exp COMMA listValues) (cons $1 $3)))
-
-    (listMember ((BRACKET-OPEN exp BRACKET-CLOSE) (list $2))
-                ((BRACKET-OPEN exp BRACKET-CLOSE listMember) (cons $2 $4)))
+    [(eq? (car expr) 'LIST-SELECT) (evaluate-list-select (get-var (cadr expr)) (evaluate-expr (caddr expr) vars))] ; Implement error handling
     
-    )))
+    [else (display "WTF IS GOING ON???") (display expr)(newline) 10]
+    ))) (display "Expr ") (display expr) (display " with variables ") (display vars) (display " evaluated to ") (display a) (newline) a)
+  )
 
-(define lex-this (lambda (lexer input) (lambda () (lexer input))))
-(define my-lexer (lex-this project-lexer (open-input-string "a=b[2][3][4]; return a")))
-(let ((parser-res (project-parser my-lexer))) parser-res)
+;************************ TODO ************************
+;*                                                    *
+;*                   PEDRAM & ATRIN                   * 
+;*                                                    *
+;******************************************************
+(define (evaluate-less-than expr1 expr2)       'LESS-THAN-NOT-IMPLEMENTED )
+(define (evaluate-greater-than expr1 expr2)    'GREATER-THAN-NOT-IMPLEMENTED )
+(define (evaluate-equal expr1 expr2)           'EQUAL-NOT-IMPLEMENTED )
+(define (evaluate-not-equal expr1 expr2)       'NOT-EQUAL-NOT-IMPLEMENTED )
+
+(define (evaluate-add expr1 expr2)             'ADD-NOT-IMPLEMENTED )
+(define (evaluate-sub expr1 expr2)             'SUB-NOT-IMPLEMENTED )
+(define (evaluate-mult expr1 expr2)            'MULT-NOT-IMPLEMENTED )
+(define (evaluate-div expr1 expr2)             'DIV-NOT-IMPLEMENTED )
+
+(define (evaluate-negative expr1)              'NEGATIVE-NOT-IMPLEMENTED )
+
+(define (evaluate-list-select list index-list) 'LIST-SELECT-NOT-IMPLEMENTED)
+;************************ END TODO ************************
+;*                                                        *
+;*                   PEDRAM & ATRIN                       * 
+;*                                                        *
+;**********************************************************
+
+(define (interpret pt vars)
+  (do ((pt pt (cdr pt)))
+    ((or (null? pt) (and (not (null? vars)) (eq? (car vars) 'PROGRAM-RETURNED)) )
+     (cond
+       [(eq? (car vars) 'PROGRAM-RETURNED) vars]
+       [(null? pt) vars]
+       [else (display "Error in (interpret pt vars) function")]
+       )
+     )
+      
+    (set! vars (run-command (car pt) vars))
+    )
+  )
+
+(define (evaluate file)
+  (let ((my-lexer (lex-this project-lexer (open-input-file file))))
+    (let ((parse-tree (project-parser my-lexer)))
+      (display parse-tree)
+      (newline)
+      (interpret parse-tree '())
+      )
+    )
+  )
+
+(evaluate "sample_program.txt")
