@@ -1,0 +1,1 @@
+("7.9" racket ("20e2bf29cbb69c5e8911fd88867f4f6472bef185" . "9e678ec0b6f79105a1c08e1934cf4d61c6574791") (collects #"errortrace" #"errortrace-key.rkt") (collects #"parser-tools" #"lex-sre.rkt") (collects #"parser-tools" #"lex.rkt") (collects #"parser-tools" #"yacc.rkt") (collects #"racket" #"main.rkt") (collects #"racket" #"runtime-config.rkt"))

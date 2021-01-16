@@ -4,8 +4,7 @@
          (prefix-in : parser-tools/lex-sre)
          parser-tools/yacc
          "parser.rkt"
-         "lexer.rkt"
-         "utils.rkt")
+         "lexer.rkt")
 
 (define (get-var var-name vars)
   (cond
@@ -92,13 +91,7 @@
 ;*                   PEDRAM & ATRIN                   * 
 ;*                                                    *
 ;******************************************************
-(define (evaluate-less-than expr1 expr2)
-  (cond
-    [(and (number? expr1) (number? expr2)) (< expr1 expr2)]
-    [(and (string? expr1) (string? expr2)) (string<? expr1 expr2)]
-    [(and (list? expr1) (number? expr2)) ()]
-    [(and (list? expr1) (string? expr2)) ()]
-    ))
+(define (evaluate-less-than expr1 expr2)       'LESS-THAN-NOT-IMPLEMENTED )
 (define (evaluate-greater-than expr1 expr2)    'GREATER-THAN-NOT-IMPLEMENTED )
 (define (evaluate-equal expr1 expr2)           'EQUAL-NOT-IMPLEMENTED )
 (define (evaluate-not-equal expr1 expr2)       'NOT-EQUAL-NOT-IMPLEMENTED )
