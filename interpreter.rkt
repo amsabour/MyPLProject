@@ -24,7 +24,7 @@
 
 (define (run-if-cmd expr then-pt else-pt vars)
   (let ((expr-val (evaluate-expr expr vars)))
-    (if expr-val (interpret then-pt vars) (interpret else-pt vars))
+    (if (symbol? expr-val) (list 'PROGRAM-RETURNED expr-val) (if expr-val (interpret then-pt vars) (interpret else-pt vars)))
     )
   )
 
@@ -37,7 +37,7 @@
 
 (define (run-assign-cmd var-name expr vars)
   (let ((expr-val (evaluate-expr expr vars)))
-    (update-var var-name expr-val vars)
+    (if (symbol? expr-val) (list 'PROGRAM-RETURNED expr-val) (update-var var-name expr-val vars))
     )
   )
 
