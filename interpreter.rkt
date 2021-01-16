@@ -87,34 +87,112 @@
     ))) (display "Expr ") (display expr) (display " with variables ") (display vars) (display " evaluated to ") (display a) (newline) a)
   )
 
-;************************ TODO ************************
-;*                                                    *
-;*                   PEDRAM & ATRIN                   * 
-;*                                                    *
+
 ;******************************************************
 (define (evaluate-less-than expr1 expr2)
   (cond
     [(and (number? expr1) (number? expr2)) (< expr1 expr2)]
     [(and (string? expr1) (string? expr2)) (string<? expr1 expr2)]
-    [(and (list? expr1) (number? expr2)) ()]
-    [(and (list? expr1) (string? expr2)) ()]
-    ))
-(define (evaluate-greater-than expr1 expr2)    'GREATER-THAN-NOT-IMPLEMENTED )
-(define (evaluate-equal expr1 expr2)           'EQUAL-NOT-IMPLEMENTED )
-(define (evaluate-not-equal expr1 expr2)       'NOT-EQUAL-NOT-IMPLEMENTED )
+    [(and (list? expr1) (number? expr2)) (list-less-than-number expr1 expr2)]
+    [(and (list? expr1) (string? expr2)) (list-less-than-string expr1 expr2)]
+    [else 'INVALID-COMPARISON]
+    )
+  )
 
-(define (evaluate-add expr1 expr2)             'ADD-NOT-IMPLEMENTED )
-(define (evaluate-sub expr1 expr2)             'SUB-NOT-IMPLEMENTED )
-(define (evaluate-mult expr1 expr2)            'MULT-NOT-IMPLEMENTED )
-(define (evaluate-div expr1 expr2)             'DIV-NOT-IMPLEMENTED )
+(define (evaluate-greater-than expr1 expr2)
+  (cond
+    [(and (number? expr1) (number? expr2)) (> expr1 expr2)]
+    [(and (string? expr1) (string? expr2)) (string>? expr1 expr2)]
+    [(and (list? expr1) (number? expr2)) (list-greater-than-number expr1 expr2)]
+    [(and (list? expr1) (string? expr2)) (list-greater-than-string expr1 expr2)]
+    [else 'INVALID-COMPARISON]
+    )
+  )
 
-(define (evaluate-negative expr1)              'NEGATIVE-NOT-IMPLEMENTED )
+(define (evaluate-equal expr1 expr2)
+  (cond
+    [(and (number? expr1) (number? expr2)) (equal? expr1 expr2)]
+    [(and (string? expr1) (string? expr2)) (equal? expr1 expr2)]
+    [(and (symbol? expr1) (symbol? expr2) (equal? expr1 'NULL) (equal? expr2 'NULL)) (#t)]
+    [(and (boolean? expr1) (boolean? expr2)) (equal? expr1 expr2)]
+    [(and (list? expr1) (list? expr2)) (equal? expr1 expr2)]
+    [else 'INVALID-COMPARISON]
+    )
+  )
 
-(define (evaluate-list-select list index-list) 'LIST-SELECT-NOT-IMPLEMENTED)
-;************************ END TODO ************************
-;*                                                        *
-;*                   PEDRAM & ATRIN                       * 
-;*                                                        *
+(define (evaluate-not-equal expr1 expr2)
+  (cond
+    [(and (number? expr1) (number? expr2)) (not (equal? expr1 expr2))]
+    [(and (string? expr1) (string? expr2)) (not (equal? expr1 expr2))]
+    [(and (symbol? expr1) (symbol? expr2) (equal? expr1 'NULL) (equal? expr2 'NULL)) (#f)]
+    [(and (boolean? expr1) (boolean? expr2)) (not (equal? expr1 expr2))]
+    [(and (list? expr1) (list? expr2)) (not (equal? expr1 expr2))]
+    [else 'INVALID-COMPARISON]
+    )
+  )
+
+(define (evaluate-add expr1 expr2)
+  (cond
+    [(and (number? expr1) (number? expr2)) (+ expr1 expr2)]
+    [(and (boolean? expr1) (boolean? expr2)) (or expr1 expr2)]
+    [(and (list? expr1) (number? expr2)) (list-add-number expr1 expr2)]
+    [(and (number? expr1) (list? expr2)) (list-add-number expr2 expr1)]
+    [(and (list? expr1) (boolean? expr2)) (list-add-boolean expr1 expr2)]
+    [(and (boolean? expr1) (list? expr2)) (list-add-boolean expr2 expr1)]
+    [(and (string? expr1) (string? expr2)) (string-append expr1 expr2)]
+    [(and (string? expr1) (list? expr2)) (list-add-string-first expr2 expr1)]
+    [(and (list? expr1) (string? expr2)) (list-add-string-last expr1 expr2)]
+    [(and (list? expr1) (list? expr2)) (append-list expr1 expr2)]
+    [else 'INVALID-ADDITION]
+    )
+  )
+
+(define (evaluate-sub expr1 expr2)
+  (cond
+    [(and (number? expr1) (number? expr2)) (- expr1 expr2)]
+    [(and (list? expr1) (number? expr2)) (list-sub-number expr1 expr2)]
+    [(and (number? expr1) (list? expr2)) (number-sub-list expr2 expr1)]
+    [else 'INVALID-SUBTRACTION]
+    )
+  )
+
+(define (evaluate-mult expr1 expr2)
+  (cond
+    [(and (number? expr1) (number? expr2)) (* expr1 expr2)]
+    [(and (boolean? expr1) (boolean? expr2)) (and expr1 expr2)]
+    [(and (list? expr1) (number? expr2)) (list-mult-number expr1 expr2)]
+    [(and (number? expr1) (list? expr2)) (list-mult-number expr2 expr1)]
+    [(and (list? expr1) (boolean? expr2)) (list-mult-boolean expr1 expr2)]
+    [(and (boolean? expr1) (list? expr2)) (list-mult-boolean expr2 expr1)]
+    [else 'INVALID-MULTIPICATION]
+    )
+  )
+
+(define (evaluate-div expr1 expr2)
+  (cond
+    [(and (number? expr1) (number? expr2)) (/ expr1 expr2)]
+    [(and (list? expr1) (number? expr2)) (list-div-number expr1 expr2)]
+    [(and (number? expr1) (list? expr2)) (number-div-list expr2 expr1)]
+    [else 'INVALID-DIVISION]
+    )
+  )
+
+(define (evaluate-negative expr1)
+  (cond
+    [(number? expr1)  (- 0 expr1)]
+    [(boolean? expr1)  (not expr1)]
+    [(list? expr1)  (negate-list expr1)]
+    [else 'INVALID-NEGATIVE]
+    )
+  )
+
+(define (evaluate-list-select l index-list)
+  (cond
+    [(and (list? l) (integer? index-list) (<= 0 index-list) (< index-list (length l)))  (list-ref l index-list)]
+    [else 'INVALID-MEMBER]
+    )
+  )
+
 ;**********************************************************
 
 (define (interpret pt vars)
