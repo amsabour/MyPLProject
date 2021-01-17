@@ -1,0 +1,10 @@
+v=3;
+st= "hel" + "lo";
+ list = []+[1,  2,  3] + [9-8 , 6.5];
+ L = [1,  2,  3, 1 , 6.5];l=[1, 1];
+ ll=[true];
+ ll = false*(false+ll);
+ ma = ["sal", "hhh"];
+ ma = ma + ""+ "aaa";
+ fin=[6>5, 3==v, true, -false, null!= null, st !="hello", null==null, true==false, list==L, list!=L, L < 10.0, list>5, L >0, ma == ["salaaa", "hhhaaa"], ma > "asl", ma < "salam", 3/2-1.5==0, 2*l-3==-l, true*(false+true), ll[0]];
+ return fin

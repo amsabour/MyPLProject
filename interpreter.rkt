@@ -290,4 +290,4 @@
     )
   )
 
-(evaluate "sample_program.txt")
+(evaluate "test/program2.txt")
