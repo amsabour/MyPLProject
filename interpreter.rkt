@@ -177,9 +177,9 @@
 
 (define (evaluate-equal expr1 expr2 [print-error #t])
   (cond
-    [(and (number? expr1) (number? expr2)) (equal? expr1 expr2)]
+    [(and (number? expr1) (number? expr2)) (= expr1 expr2)]
     [(and (string? expr1) (string? expr2)) (equal? expr1 expr2)]
-    [(and (symbol? expr1) (symbol? expr2) (equal? expr1 'NULL) (equal? expr2 'NULL)) (#t)]
+    [(and (symbol? expr1) (symbol? expr2) (equal? expr1 'NULL) (equal? expr2 'NULL)) #t]
     [(and (boolean? expr1) (boolean? expr2)) (equal? expr1 expr2)]
     [(and (list? expr1) (list? expr2)) (equal? expr1 expr2)]
     [else (when print-error (display expr1) (display " == ") (display expr2) (display " : INVALID OPERATION!") (newline)) 'INVALID-COMPARISON]
@@ -188,9 +188,9 @@
 
 (define (evaluate-not-equal expr1 expr2 [print-error #t])
   (cond
-    [(and (number? expr1) (number? expr2)) (not (equal? expr1 expr2))]
+    [(and (number? expr1) (number? expr2)) (not (= expr1 expr2))]
     [(and (string? expr1) (string? expr2)) (not (equal? expr1 expr2))]
-    [(and (symbol? expr1) (symbol? expr2) (equal? expr1 'NULL) (equal? expr2 'NULL)) (#f)]
+    [(and (symbol? expr1) (symbol? expr2) (equal? expr1 'NULL) (equal? expr2 'NULL)) #f]
     [(and (boolean? expr1) (boolean? expr2)) (not (equal? expr1 expr2))]
     [(and (list? expr1) (list? expr2)) (not (equal? expr1 expr2))]
     [else (when print-error (display expr1) (display " != ") (display expr2) (display " : INVALID OPERATION!") (newline)) 'INVALID-COMPARISON]
