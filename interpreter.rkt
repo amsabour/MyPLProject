@@ -253,12 +253,11 @@
 
 (define (evaluate-list-select l index-list)
   (cond
-    [(null? index-list) '()]
-    [else (let ((first-elem (list-select l (car index-list))) (the-rest (evaluate-list-select l (cdr index-list))))
+    [(null? index-list) l]
+    [else (let ((first-elem (list-select l (car index-list))))
             (cond
               [(symbol? first-elem) first-elem]
-              [(symbol? the-rest) the-rest]
-              [else (cons first-elem the-rest)]
+              [else (evaluate-list-select first-elem (cdr index-list))]
               ))]
     )
   )
