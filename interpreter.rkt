@@ -11,6 +11,7 @@
 (define (get-var var-name vars)
   (cond
     [(null? vars) (display "VAR ") (display var-name) (display " IS NOT DEFINED!") (newline) 'VAR-DOESNT-EXIST]
+    
     [(eq? var-name (caar vars)) (cadar vars)]
     [else (get-var var-name (cdr vars))])
   )
@@ -116,7 +117,7 @@
 
     [(eq? (car expr) 'NEGATIVE)   (evaluate-negative (evaluate-expr (cadr expr) vars))]
 
-    [(eq? (car expr) 'LIST-SELECT) (evaluate-list-select (get-var (cadr expr)) (evaluate-expr (caddr expr) vars))]
+    [(eq? (car expr) 'LIST-SELECT) (evaluate-list-select (get-var (cadr expr) vars) (map (lambda (l) (evaluate-expr l vars)) (caddr expr)))]
     
     [else (display "WTF IS GOING ON???") (display expr)(newline) 10]
     ))) (display "Expr ") (display expr) (display " with variables ") (display vars) (display " evaluated to ") (display a) (newline) a)
@@ -252,8 +253,13 @@
 
 (define (evaluate-list-select l index-list)
   (cond
-    [(and (list? l) (integer? index-list) (<= 0 index-list) (< index-list (length l)))  (list-ref l index-list)]
-    [else 'INVALID-MEMBER]
+    [(null? index-list) '()]
+    [else (let ((first-elem (list-select l (car index-list))) (the-rest (evaluate-list-select l (cdr index-list))))
+            (cond
+              [(symbol? first-elem) first-elem]
+              [(symbol? the-rest) the-rest]
+              [else (cons first-elem the-rest)]
+              ))]
     )
   )
 

@@ -160,3 +160,10 @@
     [else (search-by-first-elem (cdr lst) elem comp)]
     )
   )
+
+(define (list-select l index)
+  (cond
+    [(and (list? l) (integer? index) (<= 0 index) (< index (length l)))  (list-ref l index)]
+    [else 'INVALID-MEMBER]
+    )
+  )
