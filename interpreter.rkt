@@ -10,7 +10,7 @@
 
 (define (get-var var-name vars)
   (cond
-    [(null? vars) (display "VAR ") (display var-name) (display " IS NOT DEFINED!") (newline) 'VAR-DOESNT-EXIST]
+    [(null? vars) (display "VAR ") (display var-name) (display " IS NOT DEFINED where vars = ") (display vars) (newline) 'VAR-DOESNT-EXIST]
     
     [(eq? var-name (caar vars)) (cadar vars)]
     [else (get-var var-name (cdr vars))])
@@ -18,9 +18,10 @@
 
 ; return vars with updated value for var-name
 (define (update-var var-name new-val vars)
+  (display "Update variable called with ")(display var-name)(display " with new value of ")(display new-val)(display " on ")(display vars)(newline)
   (cond
     [(null? vars) (list (list var-name new-val))]
-    [(eq? var-name (caar vars)) (cons (list (list var-name new-val)) (cdr vars))]
+    [(eq? var-name (caar vars)) (cons (list var-name new-val) (cdr vars))]
     [else (cons (car vars) (update-var var-name new-val (cdr vars)))])
   )
 
