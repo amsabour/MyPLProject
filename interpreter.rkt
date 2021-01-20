@@ -1,5 +1,6 @@
 #lang racket
 
+
 (require parser-tools/lex
          (prefix-in : parser-tools/lex-sre)
          parser-tools/yacc
@@ -9,7 +10,7 @@
 
 (define (get-var var-name vars)
   (cond
-    [(null? vars) 'VAR-DOESNT-EXIST]
+    [(null? vars) (display "VAR ") (display var-name) (display " IS NOT DEFINED!") (newline) 'VAR-DOESNT-EXIST]
     [(eq? var-name (caar vars)) (cadar vars)]
     [else (get-var var-name (cdr vars))])
   )
@@ -20,6 +21,15 @@
     [(null? vars) (list (list var-name new-val))]
     [(eq? var-name (caar vars)) (cons (list (list var-name new-val)) (cdr vars))]
     [else (cons (car vars) (update-var var-name new-val (cdr vars)))])
+  )
+
+(define (run-print-cmd pexpr vars)
+  (display "Prints: ")
+  (cond
+    [(eq? (car pexpr) 'PRINT-EXP) (display (evaluate-expr-for-print (cadr pexpr) vars)) (newline)]
+    [(eq? (car pexpr) 'PRINT-PEXP) (display (evaluate-expr-for-print (cadr pexpr) vars)) (display (run-print-cmd (caddr pexpr) vars))]
+    [else (display "SOMETHING WENT WRONG!") '(PROGRAM-RETURNED -9999999)]
+    ) vars
   )
 
 (define (run-if-cmd expr then-pt else-pt vars)
@@ -52,6 +62,7 @@
     [(eq? (car cmd) 'ASSIGN) (run-assign-cmd (cadr cmd) (caddr cmd) vars)]
     [(eq? (car cmd) 'WHILE) (run-while-cmd (cadr cmd) (caddr cmd) vars)]
     [(eq? (car cmd) 'RETURN) (run-return-cmd (cadr cmd) vars)]
+    [(eq? (car cmd) 'PRINT) (run-print-cmd (cadr cmd) vars)]
     
     [else (display "SOMETHING IS WRONG") '(PROGRAM-RETURNED -9999999)]
     )
@@ -67,24 +78,53 @@
     [(eq? (car expr) 'DATA-STRING) (cadr expr)]
     [(eq? (car expr) 'DATA-LIST) (map (lambda (l) (evaluate-expr l vars)) (cadr expr))]
     
-    [(eq? (car expr) 'EVAL-VAR) (get-var (cadr expr) vars)]   ; Implement error handling if var doesn't exist
+    [(eq? (car expr) 'EVAL-VAR) (get-var (cadr expr) vars)]
 
-    [(eq? (car expr) 'LESS)      (evaluate-less-than (evaluate-expr (cadr expr) vars) (evaluate-expr (caddr expr) vars))] ; Implement error handling
-    [(eq? (car expr) 'GREATER)   (evaluate-greater-than (evaluate-expr (cadr expr) vars) (evaluate-expr (caddr expr) vars))] ; Implement error handling
-    [(eq? (car expr) 'EQUAL)     (evaluate-equal (evaluate-expr (cadr expr) vars) (evaluate-expr (caddr expr) vars))] ; Implement error handling
-    [(eq? (car expr) 'NOT-EQUAL) (evaluate-not-equal (evaluate-expr (cadr expr) vars) (evaluate-expr (caddr expr) vars))] ; Implement error handling
+    [(eq? (car expr) 'LESS)      (evaluate-less-than (evaluate-expr (cadr expr) vars) (evaluate-expr (caddr expr) vars))]
+    [(eq? (car expr) 'GREATER)   (evaluate-greater-than (evaluate-expr (cadr expr) vars) (evaluate-expr (caddr expr) vars))]
+    [(eq? (car expr) 'EQUAL)     (evaluate-equal (evaluate-expr (cadr expr) vars) (evaluate-expr (caddr expr) vars))]
+    [(eq? (car expr) 'NOT-EQUAL) (evaluate-not-equal (evaluate-expr (cadr expr) vars) (evaluate-expr (caddr expr) vars))]
 
-    [(eq? (car expr) 'ADD)   (evaluate-add (evaluate-expr (cadr expr) vars) (evaluate-expr (caddr expr) vars))] ; Implement error handling
-    [(eq? (car expr) 'SUB)   (evaluate-sub (evaluate-expr (cadr expr) vars) (evaluate-expr (caddr expr) vars))] ; Implement error handling
-    [(eq? (car expr) 'MULT)  (evaluate-mult (evaluate-expr (cadr expr) vars) (evaluate-expr (caddr expr) vars))] ; Implement error handling
-    [(eq? (car expr) 'DIV)   (evaluate-div (evaluate-expr (cadr expr) vars) (evaluate-expr (caddr expr) vars))] ; Implement error handling
+    [(eq? (car expr) 'ADD)   (evaluate-add (evaluate-expr (cadr expr) vars) (evaluate-expr (caddr expr) vars))]
+    [(eq? (car expr) 'SUB)   (evaluate-sub (evaluate-expr (cadr expr) vars) (evaluate-expr (caddr expr) vars))]
+    [(eq? (car expr) 'MULT)  (evaluate-mult (evaluate-expr (cadr expr) vars) (evaluate-expr (caddr expr) vars))]
+    [(eq? (car expr) 'DIV)   (evaluate-div (evaluate-expr (cadr expr) vars) (evaluate-expr (caddr expr) vars))]
 
-    [(eq? (car expr) 'NEGATIVE)   (evaluate-negative (evaluate-expr (cadr expr) vars))] ; Implement error handling
+    [(eq? (car expr) 'NEGATIVE)   (evaluate-negative (evaluate-expr (cadr expr) vars))]
 
-    [(eq? (car expr) 'LIST-SELECT) (evaluate-list-select (get-var (cadr expr)) (evaluate-expr (caddr expr) vars))] ; Implement error handling
+    [(eq? (car expr) 'LIST-SELECT) (evaluate-list-select (get-var (cadr expr)) (evaluate-expr (caddr expr) vars))]
     
     [else (display "WTF IS GOING ON???") (display expr)(newline) 10]
     ))) (display "Expr ") (display expr) (display " with variables ") (display vars) (display " evaluated to ") (display a) (newline) a)
+  )
+
+(define (evaluate-expr-for-print expr vars)
+  (let ((a
+  (cond
+    [(eq? (car expr) 'DATA-NUMBER) (cadr expr)]
+    [(eq? (car expr) 'DATA-NULL) (cadr expr)]
+    [(eq? (car expr) 'DATA-BOOL) (cadr expr)]
+    [(eq? (car expr) 'DATA-STRING) (substring (cadr expr) 1 (- (string-length  (cadr expr)) 1))]
+    [(eq? (car expr) 'DATA-LIST) (map (lambda (l) (evaluate-expr l vars)) (cadr expr))]
+    
+    [(eq? (car expr) 'EVAL-VAR) (get-var (cadr expr) vars)]
+
+    [(eq? (car expr) 'LESS)      (evaluate-less-than (evaluate-expr (cadr expr) vars) (evaluate-expr (caddr expr) vars))]
+    [(eq? (car expr) 'GREATER)   (evaluate-greater-than (evaluate-expr (cadr expr) vars) (evaluate-expr (caddr expr) vars))]
+    [(eq? (car expr) 'EQUAL)     (evaluate-equal (evaluate-expr (cadr expr) vars) (evaluate-expr (caddr expr) vars))]
+    [(eq? (car expr) 'NOT-EQUAL) (evaluate-not-equal (evaluate-expr (cadr expr) vars) (evaluate-expr (caddr expr) vars))]
+
+    [(eq? (car expr) 'ADD)   (evaluate-add (evaluate-expr (cadr expr) vars) (evaluate-expr (caddr expr) vars))]
+    [(eq? (car expr) 'SUB)   (evaluate-sub (evaluate-expr (cadr expr) vars) (evaluate-expr (caddr expr) vars))]
+    [(eq? (car expr) 'MULT)  (evaluate-mult (evaluate-expr (cadr expr) vars) (evaluate-expr (caddr expr) vars))]
+    [(eq? (car expr) 'DIV)   (evaluate-div (evaluate-expr (cadr expr) vars) (evaluate-expr (caddr expr) vars))]
+
+    [(eq? (car expr) 'NEGATIVE)   (evaluate-negative (evaluate-expr (cadr expr) vars))]
+
+    [(eq? (car expr) 'LIST-SELECT) (evaluate-list-select (get-var (cadr expr)) (evaluate-expr (caddr expr) vars))]
+    
+    [else (display "WTF IS GOING ON???") (display expr)(newline) 10]
+    ))) a)
   )
 
 
@@ -95,7 +135,7 @@
     [(and (string? expr1) (string? expr2)) (string<? expr1 expr2)]
     [(and (list? expr1) (number? expr2)) (list-less-than-number expr1 expr2)]
     [(and (list? expr1) (string? expr2)) (list-less-than-string expr1 expr2)]
-    [else 'INVALID-COMPARISON]
+    [else (display expr1) (display " < ") (display expr2) (display " : INVALID OPERATION!") (newline) 'INVALID-COMPARISON]
     )
   )
 
@@ -105,7 +145,7 @@
     [(and (string? expr1) (string? expr2)) (string>? expr1 expr2)]
     [(and (list? expr1) (number? expr2)) (list-greater-than-number expr1 expr2)]
     [(and (list? expr1) (string? expr2)) (list-greater-than-string expr1 expr2)]
-    [else 'INVALID-COMPARISON]
+    [else (display expr1) (display " > ") (display expr2) (display " : INVALID OPERATION!") (newline) 'INVALID-COMPARISON]
     )
   )
 
@@ -116,7 +156,7 @@
     [(and (symbol? expr1) (symbol? expr2) (equal? expr1 'NULL) (equal? expr2 'NULL)) (#t)]
     [(and (boolean? expr1) (boolean? expr2)) (equal? expr1 expr2)]
     [(and (list? expr1) (list? expr2)) (equal? expr1 expr2)]
-    [else 'INVALID-COMPARISON]
+    [else (display expr1) (display " == ") (display expr2) (display " : INVALID OPERATION!") (newline) 'INVALID-COMPARISON]
     )
   )
 
@@ -127,7 +167,7 @@
     [(and (symbol? expr1) (symbol? expr2) (equal? expr1 'NULL) (equal? expr2 'NULL)) (#f)]
     [(and (boolean? expr1) (boolean? expr2)) (not (equal? expr1 expr2))]
     [(and (list? expr1) (list? expr2)) (not (equal? expr1 expr2))]
-    [else 'INVALID-COMPARISON]
+    [else (display expr1) (display " != ") (display expr2) (display " : INVALID OPERATION!") (newline) 'INVALID-COMPARISON]
     )
   )
 
@@ -143,7 +183,7 @@
     [(and (string? expr1) (list? expr2)) (list-add-string-first expr2 expr1)]
     [(and (list? expr1) (string? expr2)) (list-add-string-last expr1 expr2)]
     [(and (list? expr1) (list? expr2)) (append-list expr1 expr2)]
-    [else 'INVALID-ADDITION]
+    [else (display expr1) (display " + ") (display expr2) (display " : INVALID OPERATION!") (newline) 'INVALID-ADDITION]
     )
   )
 
@@ -152,7 +192,7 @@
     [(and (number? expr1) (number? expr2)) (- expr1 expr2)]
     [(and (list? expr1) (number? expr2)) (list-sub-number expr1 expr2)]
     [(and (number? expr1) (list? expr2)) (number-sub-list expr2 expr1)]
-    [else 'INVALID-SUBTRACTION]
+    [else (display expr1) (display " - ") (display expr2) (display " : INVALID OPERATION!") (newline) 'INVALID-SUBTRACTION]
     )
   )
 
@@ -164,7 +204,7 @@
     [(and (number? expr1) (list? expr2)) (list-mult-number expr2 expr1)]
     [(and (list? expr1) (boolean? expr2)) (list-mult-boolean expr1 expr2)]
     [(and (boolean? expr1) (list? expr2)) (list-mult-boolean expr2 expr1)]
-    [else 'INVALID-MULTIPICATION]
+    [else (display expr1) (display " * ") (display expr2) (display " : INVALID OPERATION!") (newline) 'INVALID-MULTIPICATION]
     )
   )
 
@@ -173,7 +213,7 @@
     [(and (number? expr1) (number? expr2)) (/ expr1 expr2)]
     [(and (list? expr1) (number? expr2)) (list-div-number expr1 expr2)]
     [(and (number? expr1) (list? expr2)) (number-div-list expr2 expr1)]
-    [else 'INVALID-DIVISION]
+    [else (display expr1) (display " / ") (display expr2) (display " : INVALID OPERATION!") (newline) 'INVALID-DIVISION]
     )
   )
 
@@ -182,7 +222,7 @@
     [(number? expr1)  (- 0 expr1)]
     [(boolean? expr1)  (not expr1)]
     [(list? expr1)  (negate-list expr1)]
-    [else 'INVALID-NEGATIVE]
+    [else (display "-") (display expr1) (display " : INVALID OPERATION!") (newline) 'INVALID-NEGATIVE]
     )
   )
 
@@ -196,6 +236,7 @@
 ;**********************************************************
 
 (define (interpret pt vars)
+  
   (do ((pt pt (cdr pt)))
     ((or (null? pt) (and (not (null? vars)) (eq? (car vars) 'PROGRAM-RETURNED)) )
      (cond

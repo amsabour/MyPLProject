@@ -15,7 +15,9 @@
                                       LESS GREATER EQUAL NOT-EQUAL
                                       PLUS MINUS MULT DIV
                                       PARAN-OPEN PARAN-CLOSE
-                                      BRACKET-OPEN BRACKET-CLOSE))
+                                      BRACKET-OPEN BRACKET-CLOSE
+                                      PRINT PRINT-EXP PRINT-PEXP
+                                      SWITCH CASE BREAK))
 (define project-lexer
   (lexer
    [(eof) (token-EOF)]
@@ -31,6 +33,12 @@
    ["end"    (token-END)]
    ["return" (token-RETURN)]
 
+   ;print & switch-case tokens
+   ["print" (token-PRINT)]
+   ["switch" (token-SWITCH)]
+   ["case" (token-CASE)]
+   ["break" (token-BREAK)]
+   
    [";" (token-SEMICOLON)]
    ["," (token-COMMA)]
    

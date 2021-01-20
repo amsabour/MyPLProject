@@ -19,7 +19,9 @@
     (command ((command SEMICOLON keyword) (append-last $1 $3))
              ((keyword) (list $1)))
     
-    (keyword ((if_statement)     $1)
+    (keyword
+             ((print_statement) $1)
+             ((if_statement)     $1)
              ((assign_statement) $1)
              ((while_statement)  $1)
              ((return_statement) $1))
@@ -28,7 +30,11 @@
     (assign_statement ((VARIABLE ASSIGN exp) (list 'ASSIGN $1 $3)))
     (while_statement ((WHILE exp DO command END) (list 'WHILE $2 $4)))
     (return_statement ((RETURN exp) (list 'RETURN $2)))
+    (print_statement ((PRINT PARAN-OPEN pexp PARAN-CLOSE) (list 'PRINT $3)))
 
+    (pexp ((exp) (list 'PRINT-EXP $1))
+          ((exp COMMA pexp) (list 'PRINT-PEXP $1 $3)))
+    
     (exp ((aexp) $1)
          ((aexp GREATER aexp) (list 'GREATER $1 $3))
          ((aexp LESS aexp) (list 'LESS $1 $3))
@@ -64,6 +70,6 @@
     
     )))
 
-;(define my-lexer (lex-this project-lexer (open-input-string "a=(10)")))
+;(define my-lexer (lex-this project-lexer (open-input-string "print(2, 5, a)")))
 ;(let ((parser-res (project-parser my-lexer))) parser-res)
-
+;(my-lexer)
