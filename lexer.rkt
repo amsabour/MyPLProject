@@ -62,7 +62,7 @@
    ["true"  (token-BOOLEAN #t)]
    ["false" (token-BOOLEAN #f)]
    [(:or (:+ (char-range #\0 #\9)) (:: (:+ (char-range #\0 #\9)) #\. (:+ (char-range #\0 #\9)))) (token-NUMBER (string->number lexeme))]
-   [(:: #\" any-string #\") (token-STRING lexeme)]
+   [(:: #\" (complement (:: any-string #\" any-string)) #\") (token-STRING (substring lexeme 1 (- (string-length lexeme) 1)))]
    [(:+ alphabetic) (token-VARIABLE (string->symbol lexeme))]
    )
   )
