@@ -34,9 +34,9 @@
     (print_statement ((PRINT PARAN-OPEN pexp PARAN-CLOSE) (list 'PRINT $3)))
     (switch_statement ((SWITCH PARAN-OPEN exp PARAN-CLOSE BRACKET-OPEN sexp BRACKET-CLOSE) (list 'SWITCH $3 $6)))
 
-    ;switch expretions
-    (sexp ((dexp) $1)
-          ((dexp sexp) (list $1 $2)))
+    ;switch expressions
+    (sexp ((dexp) (list $1))
+          ((dexp sexp) (cons $1 $2)))
 
     (dexp ((CASE exp COLON command) (list $2 $4)))
     
@@ -78,6 +78,6 @@
     
     )))
 
-;(define my-lexer (lex-this project-lexer (open-input-string "switch(3)[case 5: return 10 case 3: return 6]")))
-;(let ((parser-res (project-parser my-lexer))) parser-res)
-;(my-lexer)
+; (define my-lexer (lex-this project-lexer (open-input-string "switch(10)[case 10: return 13 case 3: return 2 case 15: return 100]")))
+; (let ((parser-res (project-parser my-lexer))) parser-res)
+; (my-lexer)

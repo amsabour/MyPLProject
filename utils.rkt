@@ -152,3 +152,11 @@
     [else (cons (if (number? (car l)) (- 0 (car l)) (not (car l))) (negate-list (cdr l)))]
     )
   )
+
+(define (search-by-first-elem lst elem comp)
+  (cond
+    [(null? lst) '()]
+    [(and (comp (caar lst) elem #f) (not (symbol? (comp (caar lst) elem #f))) ) (cadar lst)]
+    [else (search-by-first-elem (cdr lst) elem comp)]
+    )
+  )

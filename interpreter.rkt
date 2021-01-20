@@ -55,6 +55,29 @@
   (let ((expr-val (evaluate-expr expr vars))) (list 'PROGRAM-RETURNED expr-val))
   )
 
+
+(define (switch-exp-eval-loop cases vars)
+  (cond
+    [(null? cases) '()]
+    [else (let ((expr-val (evaluate-expr (caar cases) vars)) (the-rest (switch-exp-eval-loop (cdr cases) vars)))
+            (cond
+              [(symbol? expr-val) expr-val]
+              [(symbol? the-rest) the-rest]
+              [else (cons (list expr-val (cadar cases)) the-rest)]
+              ))]
+    )
+  )
+
+(define (run-switch-cmd expr cases vars)
+  (let ((expr-val (evaluate-expr expr vars)) (cases-val (switch-exp-eval-loop cases vars)))
+    (cond
+      [(symbol? expr-val) (list 'PROGRAM-RETURNED expr-val)]
+      [(symbol? cases-val) (list 'PROGRAM-RETURNED cases-val)]
+      [else (interpret (search-by-first-elem cases-val expr-val evaluate-equal) vars)]
+    )
+  )
+)
+
 ; returns new vars or ('PROGRAM-RETURNED return-value)
 (define (run-command cmd vars)
   (cond
@@ -63,6 +86,7 @@
     [(eq? (car cmd) 'WHILE) (run-while-cmd (cadr cmd) (caddr cmd) vars)]
     [(eq? (car cmd) 'RETURN) (run-return-cmd (cadr cmd) vars)]
     [(eq? (car cmd) 'PRINT) (run-print-cmd (cadr cmd) vars)]
+    [(eq? (car cmd) 'SWITCH) (run-switch-cmd (cadr cmd) (caddr cmd) vars)]
     
     [else (display "SOMETHING IS WRONG") '(PROGRAM-RETURNED -9999999)]
     )
@@ -129,49 +153,49 @@
 
 
 ;******************************************************
-(define (evaluate-less-than expr1 expr2)
+(define (evaluate-less-than expr1 expr2 [print-error #t])
   (cond
     [(and (number? expr1) (number? expr2)) (< expr1 expr2)]
     [(and (string? expr1) (string? expr2)) (string<? expr1 expr2)]
     [(and (list? expr1) (number? expr2)) (list-less-than-number expr1 expr2)]
     [(and (list? expr1) (string? expr2)) (list-less-than-string expr1 expr2)]
-    [else (display expr1) (display " < ") (display expr2) (display " : INVALID OPERATION!") (newline) 'INVALID-COMPARISON]
+    [else (when print-error (display expr1) (display " < ") (display expr2) (display " : INVALID OPERATION!") (newline)) 'INVALID-COMPARISON]
     )
   )
 
-(define (evaluate-greater-than expr1 expr2)
+(define (evaluate-greater-than expr1 expr2 [print-error #t])
   (cond
     [(and (number? expr1) (number? expr2)) (> expr1 expr2)]
     [(and (string? expr1) (string? expr2)) (string>? expr1 expr2)]
     [(and (list? expr1) (number? expr2)) (list-greater-than-number expr1 expr2)]
     [(and (list? expr1) (string? expr2)) (list-greater-than-string expr1 expr2)]
-    [else (display expr1) (display " > ") (display expr2) (display " : INVALID OPERATION!") (newline) 'INVALID-COMPARISON]
+    [else (when print-error (display expr1) (display " > ") (display expr2) (display " : INVALID OPERATION!") (newline)) 'INVALID-COMPARISON]
     )
   )
 
-(define (evaluate-equal expr1 expr2)
+(define (evaluate-equal expr1 expr2 [print-error #t])
   (cond
     [(and (number? expr1) (number? expr2)) (equal? expr1 expr2)]
     [(and (string? expr1) (string? expr2)) (equal? expr1 expr2)]
     [(and (symbol? expr1) (symbol? expr2) (equal? expr1 'NULL) (equal? expr2 'NULL)) (#t)]
     [(and (boolean? expr1) (boolean? expr2)) (equal? expr1 expr2)]
     [(and (list? expr1) (list? expr2)) (equal? expr1 expr2)]
-    [else (display expr1) (display " == ") (display expr2) (display " : INVALID OPERATION!") (newline) 'INVALID-COMPARISON]
+    [else (when print-error (display expr1) (display " == ") (display expr2) (display " : INVALID OPERATION!") (newline)) 'INVALID-COMPARISON]
     )
   )
 
-(define (evaluate-not-equal expr1 expr2)
+(define (evaluate-not-equal expr1 expr2 [print-error #t])
   (cond
     [(and (number? expr1) (number? expr2)) (not (equal? expr1 expr2))]
     [(and (string? expr1) (string? expr2)) (not (equal? expr1 expr2))]
     [(and (symbol? expr1) (symbol? expr2) (equal? expr1 'NULL) (equal? expr2 'NULL)) (#f)]
     [(and (boolean? expr1) (boolean? expr2)) (not (equal? expr1 expr2))]
     [(and (list? expr1) (list? expr2)) (not (equal? expr1 expr2))]
-    [else (display expr1) (display " != ") (display expr2) (display " : INVALID OPERATION!") (newline) 'INVALID-COMPARISON]
+    [else (when print-error (display expr1) (display " != ") (display expr2) (display " : INVALID OPERATION!") (newline)) 'INVALID-COMPARISON]
     )
   )
 
-(define (evaluate-add expr1 expr2)
+(define (evaluate-add expr1 expr2 [print-error #t])
   (cond
     [(and (number? expr1) (number? expr2)) (+ expr1 expr2)]
     [(and (boolean? expr1) (boolean? expr2)) (or expr1 expr2)]
@@ -183,20 +207,20 @@
     [(and (string? expr1) (list? expr2)) (list-add-string-first expr2 expr1)]
     [(and (list? expr1) (string? expr2)) (list-add-string-last expr1 expr2)]
     [(and (list? expr1) (list? expr2)) (append-list expr1 expr2)]
-    [else (display expr1) (display " + ") (display expr2) (display " : INVALID OPERATION!") (newline) 'INVALID-ADDITION]
+    [else (when print-error (display expr1) (display " + ") (display expr2) (display " : INVALID OPERATION!") (newline)) 'INVALID-ADDITION]
     )
   )
 
-(define (evaluate-sub expr1 expr2)
+(define (evaluate-sub expr1 expr2 [print-error #t])
   (cond
     [(and (number? expr1) (number? expr2)) (- expr1 expr2)]
     [(and (list? expr1) (number? expr2)) (list-sub-number expr1 expr2)]
     [(and (number? expr1) (list? expr2)) (number-sub-list expr2 expr1)]
-    [else (display expr1) (display " - ") (display expr2) (display " : INVALID OPERATION!") (newline) 'INVALID-SUBTRACTION]
+    [else (when print-error (display expr1) (display " - ") (display expr2) (display " : INVALID OPERATION!") (newline)) 'INVALID-SUBTRACTION]
     )
   )
 
-(define (evaluate-mult expr1 expr2)
+(define (evaluate-mult expr1 expr2 [print-error #t])
   (cond
     [(and (number? expr1) (number? expr2)) (* expr1 expr2)]
     [(and (boolean? expr1) (boolean? expr2)) (and expr1 expr2)]
@@ -204,25 +228,25 @@
     [(and (number? expr1) (list? expr2)) (list-mult-number expr2 expr1)]
     [(and (list? expr1) (boolean? expr2)) (list-mult-boolean expr1 expr2)]
     [(and (boolean? expr1) (list? expr2)) (list-mult-boolean expr2 expr1)]
-    [else (display expr1) (display " * ") (display expr2) (display " : INVALID OPERATION!") (newline) 'INVALID-MULTIPICATION]
+    [else (when print-error (display expr1) (display " * ") (display expr2) (display " : INVALID OPERATION!") (newline)) 'INVALID-MULTIPICATION]
     )
   )
 
-(define (evaluate-div expr1 expr2)
+(define (evaluate-div expr1 expr2 [print-error #t])
   (cond
     [(and (number? expr1) (number? expr2)) (/ expr1 expr2)]
     [(and (list? expr1) (number? expr2)) (list-div-number expr1 expr2)]
     [(and (number? expr1) (list? expr2)) (number-div-list expr2 expr1)]
-    [else (display expr1) (display " / ") (display expr2) (display " : INVALID OPERATION!") (newline) 'INVALID-DIVISION]
+    [else (when print-error (display expr1) (display " / ") (display expr2) (display " : INVALID OPERATION!") (newline)) 'INVALID-DIVISION]
     )
   )
 
-(define (evaluate-negative expr1)
+(define (evaluate-negative expr1 [print-error #t])
   (cond
     [(number? expr1)  (- 0 expr1)]
     [(boolean? expr1)  (not expr1)]
     [(list? expr1)  (negate-list expr1)]
-    [else (display "-") (display expr1) (display " : INVALID OPERATION!") (newline) 'INVALID-NEGATIVE]
+    [else (when print-error (display "-") (display expr1) (display " : INVALID OPERATION!") (newline)) 'INVALID-NEGATIVE]
     )
   )
 
@@ -240,8 +264,8 @@
   (do ((pt pt (cdr pt)))
     ((or (null? pt) (and (not (null? vars)) (eq? (car vars) 'PROGRAM-RETURNED)) )
      (cond
-       [(eq? (car vars) 'PROGRAM-RETURNED) vars]
        [(null? pt) vars]
+       [(eq? (car vars) 'PROGRAM-RETURNED) vars]
        [else (display "Error in (interpret pt vars) function")]
        )
      )

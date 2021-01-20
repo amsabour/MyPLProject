@@ -1,3 +1,7 @@
-print ( 5);
-b = 5;
-return 10
+switch (1 + 2 + 3)
+[
+ case true:
+  return 10332
+ case false:
+  return 12
+]
