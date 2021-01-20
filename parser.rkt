@@ -24,14 +24,22 @@
              ((if_statement)     $1)
              ((assign_statement) $1)
              ((while_statement)  $1)
-             ((return_statement) $1))
+             ((return_statement) $1)
+             ((switch_statement) $1))
     
     (if_statement ((IF exp THEN command ELSE command END) (list 'IF $2 $4 $6)))
     (assign_statement ((VARIABLE ASSIGN exp) (list 'ASSIGN $1 $3)))
     (while_statement ((WHILE exp DO command END) (list 'WHILE $2 $4)))
     (return_statement ((RETURN exp) (list 'RETURN $2)))
     (print_statement ((PRINT PARAN-OPEN pexp PARAN-CLOSE) (list 'PRINT $3)))
+    (switch_statement ((SWITCH PARAN-OPEN exp PARAN-CLOSE BRACKET-OPEN sexp BRACKET-CLOSE) (list 'SWITCH $3 $6)))
 
+    ;switch expretions
+    (sexp ((dexp) $1)
+          ((dexp sexp) (list $1 $2)))
+
+    (dexp ((CASE exp COLON command) (list $2 $4)))
+    
     (pexp ((exp) (list 'PRINT-EXP $1))
           ((exp COMMA pexp) (list 'PRINT-PEXP $1 $3)))
     
@@ -70,6 +78,6 @@
     
     )))
 
-;(define my-lexer (lex-this project-lexer (open-input-string "print(2, 5, a)")))
+;(define my-lexer (lex-this project-lexer (open-input-string "switch(3)[case 5: return 10 case 3: return 6]")))
 ;(let ((parser-res (project-parser my-lexer))) parser-res)
 ;(my-lexer)

@@ -10,14 +10,14 @@
 (define-empty-tokens my-empty-tokens (EOF
                                       NULL
                                       WHILE DO IF THEN ELSE END RETURN
-                                      SEMICOLON COMMA
+                                      SEMICOLON COMMA COLON
                                       ASSIGN
                                       LESS GREATER EQUAL NOT-EQUAL
                                       PLUS MINUS MULT DIV
                                       PARAN-OPEN PARAN-CLOSE
                                       BRACKET-OPEN BRACKET-CLOSE
                                       PRINT PRINT-EXP PRINT-PEXP
-                                      SWITCH CASE BREAK))
+                                      SWITCH CASE))
 (define project-lexer
   (lexer
    [(eof) (token-EOF)]
@@ -37,9 +37,9 @@
    ["print" (token-PRINT)]
    ["switch" (token-SWITCH)]
    ["case" (token-CASE)]
-   ["break" (token-BREAK)]
    
    [";" (token-SEMICOLON)]
+   [":" (token-COLON)]
    ["," (token-COMMA)]
    
    ["=" (token-ASSIGN)]
