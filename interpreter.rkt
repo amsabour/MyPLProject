@@ -182,7 +182,7 @@
     [(and (symbol? expr1) (symbol? expr2) (equal? expr1 'NULL) (equal? expr2 'NULL)) #t]
     [(and (boolean? expr1) (boolean? expr2)) (equal? expr1 expr2)]
     [(and (list? expr1) (list? expr2)) (equal? expr1 expr2)]
-    [else (when print-error (display expr1) (display " == ") (display expr2) (display " : INVALID OPERATION!") (newline)) 'INVALID-COMPARISON]
+    [else #f]
     )
   )
 
@@ -290,4 +290,4 @@
     )
   )
 
-(evaluate "test/program4.txt")
+(evaluate "test/bf10.txt")

@@ -1,0 +1,10 @@
+a = 2.5 + 3.5 * 3;
+a = [a];
+b = a + a[0];
+b = b[0];
+c = "a";
+while b > 0
+    do b = b - 13;
+    c = c + c
+    end;
+return c

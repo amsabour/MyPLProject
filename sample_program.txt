@@ -4,4 +4,7 @@ switch (1 + 2 + 3)
   return 10332
  case false:
   return 12
+ case 6:
+  print(10);
+  return 1111
 ]

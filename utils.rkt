@@ -147,8 +147,10 @@
 (define (negate-list l)
   (cond
     [(null? l) '()]
-    [(not (or (number? (car l)) (boolean? (car l)))) 'INVALID-NEGATIVE]
     [(symbol? (negate-list (cdr l))) 'INVALID-NEGATIVE]
+    [(and (list? (car l)) (symbol? (negate-list (car l)))) 'INVALID-NEGATIVE]
+    [(list? (car l)) (cons (negate-list (car l)) (negate-list (cdr l)))]
+    [(and (not (list? (car l))) (not (or (number? (car l)) (boolean? (car l))))) 'INVALID-NEGATIVE]
     [else (cons (if (number? (car l)) (- 0 (car l)) (not (car l))) (negate-list (cdr l)))]
     )
   )

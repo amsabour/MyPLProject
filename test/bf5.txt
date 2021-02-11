@@ -1,0 +1,6 @@
+a = "aa";
+b = "ab";
+if a > b
+    then return a
+    else return b
+    end
